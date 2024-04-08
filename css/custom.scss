@@ -1,0 +1,76 @@
+.placeholder {
+  width: 200px;
+  height: 200px;
+}
+
+.list-gb-test {
+  margin: auto;
+  width: 50%;
+  border-left-color: red;
+  border-left-width: 3px;
+  border-left-style: solid;
+  margin-bottom: 4rem;
+}
+
+.list-gb-test p {
+  text-align: left;
+  padding-left: 1rem;
+}
+
+.list-gb-test-setup {
+  color: rgb(136, 162, 255);
+}
+
+.list-gb-test-action {
+  color: rgb(147, 147, 1);
+}
+
+.list-gb-test-assert {
+  color: rgb(110, 207, 95);
+}
+
+.waviy {
+  position: relative;
+}
+
+.waviy span {
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  animation: waviy 3s infinite;
+  animation-delay: calc(0.1s * var(--i));
+}
+
+@keyframes waviy {
+  0%,
+  40%,
+  100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-20px);
+  }
+}
+
+.rainbow-text {
+  background-image: linear-gradient(
+    to right,
+    rgb(255, 82, 82),
+    orange,
+    yellow,
+    rgb(70, 205, 70),
+    rgb(90, 90, 255),
+    rgb(165, 90, 220),
+    violet,
+    rgb(255, 82, 82)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: move 250s linear infinite;
+}
+
+@keyframes move {
+  to {
+    background-position: 10000px;
+  }
+}

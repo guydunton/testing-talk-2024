@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <title>Unit testing sucks</title>
+
+    <link rel="stylesheet" href="dist/reset.css" />
+    <link rel="stylesheet" href="dist/reveal.css" />
+    <link rel="stylesheet" href="dist/custom.css" />
+    <link rel="stylesheet" href="dist/theme/hugo.css" />
+
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="plugin/highlight/monokai.css" />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1>Modern unit testing sucks</h1>
+          <h2>An opinionated view on testing code</h2>
+        </section>
+
+        <section>
+          <ul>
+            <li>What are the problems with poorly written tests</li>
+            <li>Mocking & Coupling</li>
+            <li>Automated testing</li>
+            <li>Joyful coding</li>
+          </ul>
+        </section>
+
+        <!-- 
+				- We've all experienced making & change & a test breaks. Tests which don't compile are also broken tests. 
+				Any broken test needs manual intervention to get back into a green state
+				- If you're needing to change a test at the same time as changing code then you don't guarantee consistent
+				behavior between before the change & after
+				- Poorly written tests impact your ability to quickly make changes. This affects your ability to tidy your
+				code because simple changes require tests to be modified. PRs are more complicated because more files get
+				changed. Supporting new features can be more effort because it's harder to refactor existing code to
+				support desired behavior (this will eventually cause code & test bloat)
+        - Any bad habit in a team is likely to spread through codebases as people follow existing patterns
+			 -->
+
+        <section>
+          <h2>What do tests do?</h2>
+          <p>
+            Tests help ensure you code works both <em>before</em> and <strong>after</strong> you
+            make a change
+          </p>
+        </section>
+
+        <section>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/testing-code.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#assertion-1-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-2-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-3-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-3-pass-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-3-failure-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-4-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-4-pass-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-4-failure-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#test-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#new-code-group", "modifier": "opacity", "parameters": [0] }
+                ],
+                "animation": [
+                  [],
+                  [
+                    { "element": "#test-group", "modifier": "opacity", "parameters": [1] },
+                    { "element": "#assertion-1-group", "modifier": "opacity", "parameters": [1] },
+                    { "element": "#assertion-2-group", "modifier": "opacity", "parameters": [1] }
+                  ],
+                  [
+                  { "element": "#assertion-3-failure-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#assertion-3-group", "modifier": "opacity", "parameters": [1] }
+                  ],
+                  [
+                    { "element": "#code-block-2", "modifier": "move", "duration": 500, "parameters": [ 17, 56 ] },
+                    { "element": "#new-code-group", "modifier": "opacity", "parameters": [1] }
+                  ],
+                  [
+                    { "element": "#assertion-3-failure-group", "modifier": "opacity", "parameters": [0] },
+                    { "element": "#assertion-3-pass-group", "modifier": "opacity", "parameters": [1] }
+                  ]
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <section>
+          <div class="r-stack">
+            <img
+              src="assets/images/good-nails-2-small.jpeg"
+              alt="Regular rows of nails in old wood"
+            />
+            <img
+              class="fragment"
+              src="assets/images/too-many-nails-small.jpeg"
+              alt="Lots of nails over the top of each other in wood"
+            />
+          </div>
+        </section>
+
+        <section>
+          <p>Who's experienced a tiny change causing many tests to fail to compile or pass?</p>
+          <iframe
+            src="https://giphy.com/embed/l0IxYWDltdHEqujnO"
+            width="480"
+            height="361"
+            frameborder="0"
+            class="fragment giphy-embed"
+            allowfullscreen
+          ></iframe>
+        </section>
+
+        <section>
+          <h2>The effects of poor testing</h2>
+          <ul>
+            <li class="fragment">Changes are harder to make</li>
+            <li class="fragment">PRs will be larger than needed requiring more time</li>
+            <li class="fragment">
+              Refactoring code will be harder which will slow down new features
+            </li>
+            <li class="fragment">
+              Rather than reuse code you will see code bloat as small variants in behaviour require
+              copies of existing code
+            </li>
+            <li class="fragment">You will introduce bugs</li>
+          </ul>
+        </section>
+
+        <section>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/testing-code.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#assertion-3-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-3-pass-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-3-failure-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-4-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#assertion-4-pass-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#assertion-4-failure-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#new-code-group", "modifier": "opacity", "parameters": [0] }
+                ],
+                "animation": [
+                  [],
+                  [
+                    { "element": "#test-group", "modifier": "opacity", "parameters": [0] }
+                  ],
+                  [
+                    { "element": "#code-block-2", "modifier": "move", "duration": 500, "parameters": [ 17, 56 ] },
+                    { "element": "#new-code-group", "modifier": "opacity", "parameters": [1] }
+                  ],
+                  [
+                    { "element": "#assertion-4-pass-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#assertion-4-group", "modifier": "opacity", "parameters": [1] },
+                    { "element": "#test-group", "modifier": "opacity", "parameters": [1] }
+                  ]
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <section data-visibility="hidden">
+          <p>Remember that developers will copy existing patterns</p>
+          <img src="assets/images/bean-copy.webp" />
+        </section>
+
+        <section>
+          <h2>Mocking &</h2>
+          <img src="assets/images/coupling.png" />
+        </section>
+
+        <!-- 
+				- Coupling is the idea that changes in one place will affect code somewhere else. e.g. if a variable name
+				is change code using that will need to change
+				- Mocking (ignoring the difference between stubs, mocks fakes etc) makes private things public, increasing
+				the surface area of an interface & increases the coupling between tests & code (not necessarily the code
+				which is being tested)
+				- Mocking frameworks make this easier which makes it easier to test everything in isolation but lower 
+				the barrier to testing parts of an interface which weren't deliberately exposed.
+        - At least when you had to create an interface instead of jest.fn it made you think more about your interface
+				- Excessive mocking makes it harder to change code & leads to inflexible code
+			 -->
+
+        <section>
+          <section>
+            <pre><code class="language-typescript" data-line-numbers="|2,7|1,6">function parseData() {
+  return 42;
+}
+
+test('parseData works', () => {
+  const data = parseData();
+  expect(data).toBe(42);
+});
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="language-typescript" data-line-numbers="|5,12|2,7,13">interface Response {
+  status: number;
+}
+
+function parseData(): Response {
+  return {
+    status: 200
+  };
+}
+
+test('parseData works', () => {
+  const res = parseData();
+  expect(res.status).toBe(200);
+});
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="language-typescript" data-line-numbers="|4|5">const dbConnection = new DBConnection();
+
+test('dbConnection', () => {
+  dbConnection.setDestination('www.economist.com/db:5432');
+  expect(dbConnection.getData()).toBe('...');
+});
+            </code></pre>
+          </section>
+        </section>
+
+        <section data-auto-animate>
+          <pre
+            data-id="code-animation"
+          ><code class='language-typescript' data-line-numbers="|1-6|9-11">class DBService {
+  static async fetchData(c: DBConnection) {
+    const data = await c.getData();
+    // ...
+  }
+}
+
+test('dbConnection', async () => {
+  const dbConnection = new DBConnection();
+  const getMock = jest.mock(dbConnection, 'getData');
+  getMock.mockResolvedValue('...');
+  const data = await DBService.fetchData(dbConnection);
+  expect(data).toBe('...');
+});
+          </code></pre>
+        </section>
+
+        <section>
+          <pre><code class='language-typescript' data-line-numbers="|3,13">class DBService {
+  static async fetchData(c: DBConnection) {
+    const data = await c.getData('...');
+    // ...
+  }
+}
+
+test('dbConnection', () => {
+  const dbConnection = new DBConnection();
+  const getMock = jest.mock(dbConnection, 'getData');
+  getMock.mockResolvedValue('...');
+  await DBService.fetchData(dbConnection);
+  expect(getMock).toHaveBeenCalledWith('');
+});
+          </code></pre>
+        </section>
+
+        <section>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/code-1.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#blue-code-group", "modifier": "attr", "parameters": [{ "class": "fragment", "data-fragment-index": "0" }] },
+                  { "element": "#red-code-group", "modifier": "attr", "parameters": [{ "class": "fragment", "data-fragment-index": "1" }] },
+                  { "element": "#vis-box", "modifier": "attr", "parameters": [{ "class": "fragment", "data-fragment-index": "2" }] },
+                  { "element": "#blue-group", "modifier": "attr", "parameters": [{ "class": "fragment", "data-fragment-index": "3" }] },
+                  { "element": "#red-group", "modifier": "attr", "parameters": [{ "class": "fragment", "data-fragment-index": "4" }] }
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <section>
+          <h2>Are mocking frameworks a good idea?</h2>
+          <p>Removing barriers to entry can sometimes be a bad thing</p>
+          <img
+            src="assets/images/car-train.gif"
+            alt="Someone tries to drive around a train barrier and gets hit by the train"
+          />
+        </section>
+
+        <section>
+          <pre><code class="language-java">interface INetworkConnection {}
+
+class NetworkConnection implements INetworkConnection {}
+
+class MockNetworkConnection implements INetworkConnection {}
+
+class ImageFetcher {
+    static Image fetchImage(conn: INetworkConnection)
+}
+
+var mockConn = new MockNetworkConnection();
+var image = ImageFetcher.fetchImage(mockConn);
+          </code></pre>
+        </section>
+
+        <section>
+          <h2>Automated Testing</h2>
+        </section>
+
+        <!-- 
+         - The difference between unit & integration tests often feels arbitrary with lots of discussion about 
+              the grey area in between the 2. No unit is too small & no integration test can be too big! In the middle
+              we are just confused.
+              - I think strict definitions about these categories of test lead to a specific style of testing which
+              requires that unit tests are testing extremely small pieces of a codebase in total isolation. This
+              leads to code that is brittle & hard to change without modifying tests
+              - Lets go back to basics
+              - The goal of testing is to know our code works. The secondary goal is to make it easier to make changes 
+        and ensure it works both before & after that change
+              - Our tests should run quickly which usually requires parallelization
+              - We would like our tests to test against something as close to production as possible
+              - In order to facilitate changes our tests should stick to interfaces that we plan to not change
+
+        -->
+
+        <section>
+          <p>The lines between an integration test & a unit test feel a little blurry</p>
+          <p>"Unit tests must be completely isolated from dependencies"</p>
+        </section>
+
+        <section>
+          <h2>Back to Basics</h2>
+          <h2>Why do we test things?</h2>
+        </section>
+
+        <section>
+          <h2>Automated tests - Goals</h2>
+          <ul>
+            <li class="fragment">Ensure our code behaves correctly</li>
+            <li class="fragment">Avoid directly testing things we plan to change</li>
+            <li class="fragment">Automated test should be as close to prod as possible</li>
+            <li class="fragment">
+              We want our tests to run quickly which requires parallelization
+            </li>
+          </ul>
+        </section>
+
+        <!-- 
+          Case study of 2 codebases
+                CP2 API:
+                - GraphQL service which saves & loads things from Postgres DB
+                - GraphQL -> resolver -> Service -> DB Command -> Prisma ORM -> Postgres DB
+                - Unit tests only covered resolver & service. As parts of the service grew into their own classes
+                they also get tested which further reduces the places where changes can easily be made
+                - integrations tests left for everything else. They are slow & difficult to run in parallel even if
+                we tested by checking the contents of the db
+                - A better testing approach by replacing prisma & db with prismock in-mem db. We can save into the db
+                & check the contents directly or we can load the db with data & check the queries return the correct data
+                - The challenge is that tests can cover wide areas & become difficult to write, requiring lots of 
+                setup
+         -->
+        <section>
+          <h2>Case study 1: CP2-API</h2>
+          <!-- 
+            1. Show each of the layers of the API
+            2. Hide parts we don't currently test
+            3. Show the parts we unit test
+            4. Integration tests cover whole thing but they are slow & can't be run in parallel
+            5. Show the parts that shouldn't change (GraphQL, Prisma, SQL)
+            6. Replace prisma & SQL with prismock
+            7. Show the parts that we can now change without breaking tests
+           -->
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/cp2-api.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#orm-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#integration-test-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#graphql-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#sql-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#orm-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#db-commands-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolvers-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#orm-text-2", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#graphql-group", "modifier": "opacity", "parameters": [0] }
+                ],
+                "animation": [
+                  [],
+                  [{ "element": "#graphql-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [{ "element": "#resolvers-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [{ "element": "#service-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [{ "element": "#db-commands-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [{ "element": "#orm-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [{ "element": "#sql-group", "modifier": "opacity", "parameters": [ 1 ] }],
+                  [
+                    { "element": "#graphql-group", "modifier": "opacity", "parameters": [ 0.3 ] },
+                    { "element": "#db-commands-group", "modifier": "opacity", "parameters": [ 0.3 ] },
+                    { "element": "#orm-group", "modifier": "opacity", "parameters": [ 0.3 ] },
+                    { "element": "#sql-group", "modifier": "opacity", "parameters": [ 0.3 ] }
+                  ],
+                  [
+                    { "element": "#resolver-ok-group", "modifier": "opacity", "parameters": [ 1 ] },
+                    { "element": "#service-ok-group", "modifier": "opacity", "parameters": [ 1 ] }
+                  ],
+                  [
+                    { "element": "#resolver-bad-group", "modifier": "opacity", "parameters": [ 1 ] },
+                    { "element": "#service-bad-group", "modifier": "opacity", "parameters": [ 1 ] }
+                  ]
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <section>
+          <h2>Case study 1: CP2-API</h2>
+          <!-- 
+            1. Show each of the layers of the API
+            2. Hide parts we don't currently test
+            3. Show the parts we unit test
+            4. Integration tests cover whole thing but they are slow & can't be run in parallel
+            5. Show the parts that shouldn't change (GraphQL, Prisma, SQL)
+            6. Replace prisma & SQL with prismock
+            7. Show the parts that we can now change without breaking tests
+           -->
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/cp2-api.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#orm-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#integration-test-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#graphql-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#sql-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#orm-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#db-commands-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#service-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#resolvers-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#graphql-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#orm-text-2", "modifier": "opacity", "parameters": [ 0 ] }
+                ],
+                "animation": [
+                  [],
+                  [{ "element": "#sql-group", "modifier": "opacity", "parameters": [ 0.3 ] }],
+                  [
+                    { "element": "#orm-text", "modifier": "opacity", "parameters": [ 0 ] },
+                    { "element": "#orm-text-2", "modifier": "opacity", "parameters": [ 1 ] }
+                  ],
+                  [
+                    { "element": "#graphql-ok-group", "modifier": "opacity", "parameters": [ 1 ] },
+                    { "element": "#orm-bad-group", "modifier": "opacity", "parameters": [ 1 ] }
+                  ]
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <section>
+          <pre><code class="language-typescript" data-line-numbers="|2-6|8-17|19-31|33-38">it('can be queried using findTag', async () => {
+  const [prisma, server] = setupTestServer();
+  const context = makeTestDataSourceContext(
+    DatabaseClient.fromPrisma(prisma), 
+    { scopes: [Scope.Read] }
+  );
+
+  prisma.tag.create({
+    data: {
+      id: 'tag-id',
+      source_id: '123',
+      source_type: SourceType.CUE,
+      slug: 'tag-name',
+      name: 'Tag Name',
+      description: 'tag description',
+    },
+  });
+
+  const result = await server.executeOperation(
+    {
+      query: print(gql`
+        query FindTag {
+          findTag(id: "tag-id") {
+            id
+            description
+          }
+        }
+      `),
+    },
+    { contextValue: context }
+  );
+
+  assert(result.body.kind === 'single');
+  const data = result.body.singleResult.data;
+  const tag = data?.findTag;
+
+  expect(tag?.id).toBe('tag-id');
+  expect(tag?.description).toBe('tag description');
+});</code></pre>
+        </section>
+
+        <section>
+          <h2>The downsides</h2>
+          <p>Tests can be difficult to setup</p>
+          <p>You can be testing lots of things at once</p>
+          <p>Edge cases are harder to test</p>
+        </section>
+
+        <!-- 
+                          Rust-GB:
+                - Rust-GB is my Gameboy emulator. Emulators are easy to test compared to servers because they are 
+                entirely deterministic.
+                - You could write tests which put a fake gameboy game into a gameboy then tests the output on screen.
+                This is a lot of work & requires that the gameboy is fairly complete
+                - My initial suite of tests allowed my to make fundamental changes to internal interfaces without
+                breaking any tests. My "remove needless CPU abstraction" was a fun 25 files without a single test needing
+                to be rewritten: https://github.com/guydunton/rust-gb/pull/18/files
+         -->
+        <section>
+          <h2>Case study 2: Rust-GB</h2>
+          <img src="assets/images/gameboy.gif" alt="Gameboy bootloader animation" />
+        </section>
+
+        <section>
+          <pre><code class="language-rust">let game = Game::new([0x01, 0xFB, 0x45, /* ... */]);
+let gameboy = Gameboy::new(game);
+
+for _ in 0..10000 {
+  gameboy.run_cycle();
+}
+
+let screen_data = gameboy.get_screen_data();
+assert_eq!(screen_data[0], Color::White);
+assert_eq!(screen_data[1], Color::Light);
+// ...
+</code></pre>
+        </section>
+
+        <section>
+          <pre><code class="language-rust">#[test]
+fn test_nop_instruction() {
+    let mut gb = Gameboy::new(vec![0x00]);
+    let cycles = gb.step_once();
+
+    assert_eq!(
+      gb.get_register_16(RegisterLabel16::ProgramCounter), 
+      0x001
+    );
+    assert_eq!(cycles, 4);
+}
+          </code></pre>
+        </section>
+
+        <section>
+          <img
+            src="assets/images/gameboy-api.png"
+            alt="Cargo documentation for the Gameboy module in the rust-gb project"
+          />
+        </section>
+
+        <section>
+          <img
+            src="assets//images/pull-request-1.png"
+            alt="Screenshot of a pull request in rust-gb
+          with 25 file changes highlighted"
+          />
+        </section>
+
+        <!-- 
+          Theoretical change to CP2 API:
+                - The trouble with large end-to-end tests is that setting them up can get pretty tough. Creating an
+                in-mem db & GraphQL server + a GraphQL request is pretty challenging and makes it very difficult to
+                test edge cases without testing the same things over & over again. If the wrong thing is changed
+                you might have 20 test that are broken & finding the issue could be challenging
+                - The solution is to break up systems into sub-modules (not classes) which provide extremely stable
+                interfaces
+                - With our server we might change the service layer into an abstraction that we test against, although
+                it's very likely that the interface will change in future so it's probably a bad idea
+                - It's better to err on the side of caution & have automated tests which are too big rather than 
+                prematurely expose an interface to tests that we're likely to change
+         -->
+
+        <section>
+          <h2>CP2-API revisited</h2>
+          <p>There are issues with very large end-to-end tests</p>
+          <ul>
+            <li class="fragment">Tests can be complicated to write</li>
+            <li class="fragment">Testing edge cases is difficult</li>
+            <li class="fragment">Failures are harder to diagnose</li>
+          </ul>
+        </section>
+
+        <section>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <span class="fragment"></span>
+          <div data-animate data-load="assets/animations/cp2-api.svg">
+            <!-- 
+              {
+                "setup": [
+                  { "element": "#orm-bad-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#integration-test-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#graphql-ok-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#service-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#service-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-ok-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#resolver-bad-group", "modifier": "opacity", "parameters": [0] },
+                  { "element": "#sql-group", "modifier": "opacity", "parameters": [0.3] },
+                  { "element": "#orm-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#db-commands-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#service-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#resolvers-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#graphql-group", "modifier": "opacity", "parameters": [1] },
+                  { "element": "#orm-text-2", "modifier": "opacity", "parameters": [ 1 ] },
+                  { "element": "#orm-text", "modifier": "opacity", "parameters": [ 0 ] }
+                ],
+                "animation": [
+                  [],
+                  [
+                    { "element": "#resolver-bad-group", "modifier": "opacity", "parameters": [1] },
+                    { "element": "#service-ok-group", "modifier": "opacity", "parameters": [1] }
+                  ],
+                  [
+                    { "element": "#service-ok-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#service-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#db-commands-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-bad-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-text-2", "modifier": "opacity", "duration": 10, "parameters": [0.3] }
+                  ],
+                  [
+                    { "element": "#service-ok-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#service-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#db-commands-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#orm-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#orm-bad-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#orm-text-2", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#graphql-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#graphql-ok-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#resolvers-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#resolver-bad-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] }
+                  ],
+                  [
+                    { "element": "#resolvers-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#resolver-bad-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#service-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#service-ok-group", "modifier": "opacity", "duration": 10, "parameters": [1] },
+                    { "element": "#db-commands-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-bad-group", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#orm-text-2", "modifier": "opacity", "duration": 10, "parameters": [0.3] },
+                    { "element": "#integration-test-group", "modifier": "opacity", "duration": 2000, "parameters": [1] }
+                  ]
+                ]
+              }
+             -->
+          </div>
+        </section>
+
+        <!-- 
+              - As we break up codebases into testable chunks with clear interfaces it become important to bring
+              the term integration test back into the picture
+              - Between chunks are places where things could go wrong. The goal is to make those chunks as small 
+              as possible & as simple as possible
+              - This means that integration tests can look very similar to our other tests. We don't need to run
+              against real databases if we're confident enough in our testing processes
+
+			 -->
+
+        <section>
+          <h2>Hello again integration tests 👋</h2>
+          <p>Integration tests test the portions of the codebase between chunks</p>
+          <p>Is there a need for "real" databases?</p>
+          <p class="fragment">
+            If these gaps between chunks can be very small do you need a test for it?
+          </p>
+        </section>
+
+        <section>
+          <p>What if this is our integration point?</p>
+          <pre><code class="language-rust">
+let opcode = gameboy.get_next_instruction();
+cpu.run_opcode(opcode);
+          </code></pre>
+        </section>
+
+        <!-- 
+          - Remember the advice of Kent Beck (unit testing pioneer):
+              I get paid for code that works, not for tests, so my philosophy is to test as little as possible to reach a given level of confidence... If I don't typically make a kind of mistake...I don't test for it
+              source: https://stackoverflow.com/questions/153234/how-deep-are-your-unit-tests/
+            - If you keep the integration between blocks simple do you need a test for it?
+            - Consider your context here. If you're writing code for a pacemaker perhaps it's best to err on the
+            side of caution & have more unit tests. If it's a server that can be replaced in 5 minutes is it worth
+            hamstringing developers forever?
+         -->
+
+        <section>
+          <blockquote>
+            I get paid for code that works, not for tests, so my philosophy is to test as little as
+            possible to reach a given level of confidence... If I don't typically make a kind of
+            mistake...I don't test for it
+          </blockquote>
+          <cite
+            >Kent Beck:
+            https://stackoverflow.com/questions/153234/how-deep-are-your-unit-tests/</cite
+          >
+        </section>
+
+        <section>
+          <h2>Consider your context</h2>
+          <div class="r-stack">
+            <img
+              src="assets/images/pacemaker-scaled.jpeg"
+              alt="Image of a pacemaker inside a diagram of a person"
+            />
+            <img
+              class="fragment"
+              src="assets/images/cp2-search-deployment.png"
+              alt="Image of deployment pipeline for cp2-search-api taking 4 minutes"
+            />
+          </div>
+        </section>
+
+        <!-- 
+              - I'd like to finish on a story of this change to my emulator:
+                - I was testing my code & found that it was difficult to support variations of opcodes. e.g. 
+                supporting a the b register on OR X when I already supported OR A
+                - I tried to reuse as much of my tests as I could but I was limited by having to write GBZ80 code
+                for every single test
+                - If I could test decoding hex into instructions I could test the variations of decoding opcodes.
+                If I tested running instructions against a CPU & memory I could avoid testing pieces of code which
+                were already covered.
+                - I refactored all my tests, exposing the opcode abstraction: https://github.com/guydunton/rust-gb/pull/20/files#diff-252c95cab61936fba6d339c2e930556d8b5e64d5352fb7580ddb95909c2afe82
+                - The PR for this broke no existing tests (the existing abstractions didn't change) but contained
+                changes to 45 files, only 3 of which contained any tests. The 3 test files only contained refactored
+                tests which proved the new testing process was much faster.
+                - As a result I went from 57 supported instructions to 197 instructions without sacrificing test
+                coverage
+             -->
+
+        <section>
+          <h2>My story of joyful coding</h2>
+          <p>Tests looked like this:</p>
+          <pre><code class="language-rust">// LD (HL+), A
+let mut gb = Gameboy::new(vec![0x22, 0x00]);
+gb.set_register_16(RegisterLabel16::HL, 0x0001);
+gb.set_register_8(RegisterLabel8::A, 0x12);
+
+let cycles = gb.step_once();
+
+assert_eq!(cycles, 8);
+assert_eq!(gb.get_register_16(RegisterLabel16::HL), 0x02);
+assert_eq!(gb.get_memory_at(0x01), 0x12);
+</code></pre>
+        </section>
+
+        <section data-auto-animate>
+          <div class="list-gb-test">
+            <p data-id="1" class="list-gb-test-setup">Create gameboy & game</p>
+            <p data-id="2" class="list-gb-test-action">Gameboy decodes opcode</p>
+            <p data-id="3" class="list-gb-test-action">Opcode is run</p>
+            <p data-id="4" class="list-gb-test-assert">Check the register state</p>
+          </div>
+        </section>
+
+        <section data-auto-animate>
+          <div class="list-gb-test">
+            <p data-id="1" class="list-gb-test-setup">Create gameboy & game</p>
+            <p data-id="2" class="list-gb-test-action">Gameboy decodes opcode</p>
+            <p class="list-gb-test-assert">Check opcode is correct</p>
+          </div>
+          <div class="list-gb-test">
+            <p class="list-gb-test-setup">Create opcode by hand</p>
+            <p data-id="3" class="list-gb-test-action">Opcode is run</p>
+            <p data-id="4" class="list-gb-test-assert">Check the register state</p>
+          </div>
+        </section>
+
+        <section>
+          <pre><code>let opcode = OpCode::new(Category::XOR, [
+    Argument::Register8Constant(RegisterLabel8::B),
+    Argument::None,
+  ]);
+
+let mut cpu = CPU::new();
+let mut memory = vec![0x0; 0xFFFF];
+cpu.write_8_bits(RegisterLabel8::A, 0x01);
+cpu.write_8_bits(RegisterLabel8::B, 0x00);
+cpu.write_8_bits(RegisterLabel8::F, 0b1111_0000);
+
+opcode.run(&mut cpu, MemoryAdapter::new(&mut memory));
+
+assert_eq!(cpu.read_8_bits(RegisterLabel8::A), 0x01);</code></pre>
+        </section>
+
+        <section>
+          <pre><code class="language-rust">let xor_opcode = |register| {
+  OpCode::new(
+    Category::XOR,
+    [Argument::Register8Constant(register), Argument::None],
+  )
+};
+
+assert_eq!(decode(&[0xA8]), xor_opcode(RegisterLabel8::B));
+assert_eq!(decode(&[0xA9]), xor_opcode(RegisterLabel8::C));
+assert_eq!(decode(&[0xAA]), xor_opcode(RegisterLabel8::D));
+assert_eq!(decode(&[0xAB]), xor_opcode(RegisterLabel8::E));
+assert_eq!(decode(&[0xAC]), xor_opcode(RegisterLabel8::H));
+assert_eq!(decode(&[0xAD]), xor_opcode(RegisterLabel8::L));
+assert_eq!(decode(&[0xAF]), xor_opcode(RegisterLabel8::A));</code></pre>
+        </section>
+
+        <section>
+          <h2>The process</h2>
+          <ul>
+            <li>Switching was a large PR</li>
+            <li class="fragment">All existing tests continued to work</li>
+            <li class="fragment">Only 3 test files were changed</li>
+          </ul>
+          <img
+            src="assets/images/pr-screenshot-2.png"
+            alt="Screenshot of a pull request with 45 files changed"
+          />
+        </section>
+
+        <section data-transition="slide-in fade-out">
+          <img
+            src="assets/images/opcodes-1.png"
+            alt="Image of opcode support with roughly 20% coloured"
+          />
+        </section>
+
+        <section data-transition="fade-in slide-out">
+          <img
+            src="assets/images/opcodes-2.png"
+            alt="Image of opcode support with roughly 80% coloured"
+          />
+        </section>
+
+        <section>
+          <h2>Rant almost over</h2>
+        </section>
+
+        <section>
+          <p>Beware</p>
+          <code>jest.fn()</code>
+        </section>
+
+        <section>
+          <p>Using Docker for your integration tests is a cop-out</p>
+          <img
+            src="assets/images/bad-docker-scaled.png"
+            alt="Cartoon of the Docker whale looking angry"
+          />
+        </section>
+
+        <section data-transition="slide-in fade-out">
+          <p>Tests that are coupled with implementation details make code harder to change</p>
+        </section>
+
+        <section data-transition="fade">
+          <p data-id="joy">
+            <span class="rainbow-text">Joyful</span> code is tested in a way that makes change
+            easier
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script src="plugin/loadcontent/plugin.js"></script>
+    <script src="plugin/animate/plugin.js"></script>
+    <script src="plugin/animate/svg.min.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+        hash: true,
+        controls: false,
+        animate: {
+          autoplay: true, // default is false
+        },
+        // Learn about plugins: https://revealjs.com/plugins/
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes, RevealLoadContent, RevealAnimate],
+      });
+    </script>
+  </body>
+</html>
