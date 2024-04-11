@@ -3,6 +3,18 @@
   height: 200px;
 }
 
+.spaced-list > li {
+  margin-bottom: 1rem;
+}
+
+.bump-header-down {
+  margin-top: 1rem;
+}
+
+cite {
+  font-size: smaller;
+}
+
 .list-gb-test {
   margin: auto;
   width: 50%;

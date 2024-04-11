@@ -22,11 +22,11 @@
       <div class="slides">
         <section>
           <h1>Modern unit testing sucks</h1>
-          <h2>An opinionated view on testing code</h2>
+          <h2 class="r-fit-text">An opinionated view on testing code</h2>
         </section>
 
         <section>
-          <ul>
+          <ul class="spaced-list">
             <li>What are the problems with poorly written tests</li>
             <li>Mocking & Coupling</li>
             <li>Automated testing</li>
@@ -127,7 +127,7 @@
 
         <section>
           <h2>The effects of poor testing</h2>
-          <ul>
+          <ul class="spaced-list">
             <li class="fragment">Changes are harder to make</li>
             <li class="fragment">PRs will be larger than needed requiring more time</li>
             <li class="fragment">
@@ -200,6 +200,7 @@
 			 -->
 
         <section>
+          <h2 style="margin-top: 1rem">Coupling</h2>
           <section>
             <pre><code class="language-typescript" data-line-numbers="|2,7|1,6">function parseData() {
   return 42;
@@ -241,10 +242,12 @@ test('dbConnection', () => {
           </section>
         </section>
 
-        <section data-auto-animate>
-          <pre
-            data-id="code-animation"
-          ><code class='language-typescript' data-line-numbers="|1-6|9-11">class DBService {
+        <section>
+          <h2 style="margin-top: 1rem">Mocking</h2>
+          <section>
+            <pre
+              data-id="code-animation"
+            ><code class='language-typescript' data-line-numbers="|1-6|9-11">class DBService {
   static async fetchData(c: DBConnection) {
     const data = await c.getData();
     // ...
@@ -259,10 +262,10 @@ test('dbConnection', async () => {
   expect(data).toBe('...');
 });
           </code></pre>
-        </section>
+          </section>
 
-        <section>
-          <pre><code class='language-typescript' data-line-numbers="|3,13">class DBService {
+          <section>
+            <pre><code class='language-typescript' data-line-numbers="|3,13">class DBService {
   static async fetchData(c: DBConnection) {
     const data = await c.getData('...');
     // ...
@@ -277,6 +280,7 @@ test('dbConnection', () => {
   expect(getMock).toHaveBeenCalledWith('');
 });
           </code></pre>
+          </section>
         </section>
 
         <section>
@@ -347,17 +351,17 @@ var image = ImageFetcher.fetchImage(mockConn);
 
         <section>
           <p>The lines between an integration test & a unit test feel a little blurry</p>
-          <p>"Unit tests must be completely isolated from dependencies"</p>
+          <p class="fragment">"Unit tests must be completely isolated from dependencies"</p>
         </section>
 
         <section>
           <h2>Back to Basics</h2>
-          <h2>Why do we test things?</h2>
+          <h3>Why do we test things?</h3>
         </section>
 
         <section>
           <h2>Automated tests - Goals</h2>
-          <ul>
+          <ul class="spaced-list">
             <li class="fragment">Ensure our code behaves correctly</li>
             <li class="fragment">Avoid directly testing things we plan to change</li>
             <li class="fragment">Automated test should be as close to prod as possible</li>
@@ -624,7 +628,7 @@ fn test_nop_instruction() {
         <section>
           <h2>CP2-API revisited</h2>
           <p>There are issues with very large end-to-end tests</p>
-          <ul>
+          <ul class="spaced-list">
             <li class="fragment">Tests can be complicated to write</li>
             <li class="fragment">Testing edge cases is difficult</li>
             <li class="fragment">Failures are harder to diagnose</li>
@@ -710,9 +714,9 @@ fn test_nop_instruction() {
 			 -->
 
         <section>
-          <h2>Hello again integration tests 👋</h2>
+          <h2 class="r-fit-text">Hello again integration tests 👋</h2>
           <p>Integration tests test the portions of the codebase between chunks</p>
-          <p>Is there a need for "real" databases?</p>
+          <p class="fragment">Is there a need for "real" databases?</p>
           <p class="fragment">
             If these gaps between chunks can be very small do you need a test for it?
           </p>
@@ -737,14 +741,16 @@ cpu.run_opcode(opcode);
          -->
 
         <section>
-          <blockquote>
+          <blockquote style="width: 80%; margin-bottom: 2rem">
             I get paid for code that works, not for tests, so my philosophy is to test as little as
             possible to reach a given level of confidence... If I don't typically make a kind of
             mistake...I don't test for it
           </blockquote>
           <cite
-            >Kent Beck:
-            https://stackoverflow.com/questions/153234/how-deep-are-your-unit-tests/</cite
+            >Kent Beck -
+            <a href="https://stackoverflow.com/questions/153234/how-deep-are-your-unit-tests/"
+              >https://stackoverflow.com/questions/153234/how-deep-are-your-unit-tests/</a
+            ></cite
           >
         </section>
 
@@ -819,23 +825,6 @@ assert_eq!(gb.get_memory_at(0x01), 0x12);
         </section>
 
         <section>
-          <pre><code>let opcode = OpCode::new(Category::XOR, [
-    Argument::Register8Constant(RegisterLabel8::B),
-    Argument::None,
-  ]);
-
-let mut cpu = CPU::new();
-let mut memory = vec![0x0; 0xFFFF];
-cpu.write_8_bits(RegisterLabel8::A, 0x01);
-cpu.write_8_bits(RegisterLabel8::B, 0x00);
-cpu.write_8_bits(RegisterLabel8::F, 0b1111_0000);
-
-opcode.run(&mut cpu, MemoryAdapter::new(&mut memory));
-
-assert_eq!(cpu.read_8_bits(RegisterLabel8::A), 0x01);</code></pre>
-        </section>
-
-        <section>
           <pre><code class="language-rust">let xor_opcode = |register| {
   OpCode::new(
     Category::XOR,
@@ -853,8 +842,25 @@ assert_eq!(decode(&[0xAF]), xor_opcode(RegisterLabel8::A));</code></pre>
         </section>
 
         <section>
+          <pre><code>let opcode = OpCode::new(Category::XOR, [
+    Argument::Register8Constant(RegisterLabel8::B),
+    Argument::None,
+  ]);
+
+let mut cpu = CPU::new();
+let mut memory = vec![0x0; 0xFFFF];
+cpu.write_8_bits(RegisterLabel8::A, 0x01);
+cpu.write_8_bits(RegisterLabel8::B, 0x00);
+cpu.write_8_bits(RegisterLabel8::F, 0b1111_0000);
+
+opcode.run(&mut cpu, MemoryAdapter::new(&mut memory));
+
+assert_eq!(cpu.read_8_bits(RegisterLabel8::A), 0x01);</code></pre>
+        </section>
+
+        <section>
           <h2>The process</h2>
-          <ul>
+          <ul class="spaced-list">
             <li>Switching was a large PR</li>
             <li class="fragment">All existing tests continued to work</li>
             <li class="fragment">Only 3 test files were changed</li>
